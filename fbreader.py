@@ -17,6 +17,3 @@ def readConf(filePath):
 	return fbConfig(srcDir, destDirs)
 
 
-confObj = readConf('fb.conf')
-print('Src =', confObj.srcDir)
-print('Dest =', confObj.destDirs)
