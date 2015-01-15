@@ -1,0 +1,141 @@
+Folder Backup
+
+1. Preface
+
+This project, Folder Backup (FB in short), is a command-line based file backup utility that facilitates file backup 
+from given source folder to multiple destinations.
+
+FB will be added as a CRON task and scheduled to run every 10 minutes. File back up from the source folder
+will be done unattended - either existing file get modified or new files are added.
+
+The Zhang family will be the first customer to use this project to back up family photos to multiple destinatios.
+
+
+2. Requirements
+
+R1: The program will be implemented in Python.
+
+R2: It's designed to run in Linux environment and will be added to CRON to run every 10 minutes.
+
+R3: All files, including those contained in its sub folders of any depth, from the source folder will be backed up to
+        designated destinations. Folder structures from source folder must be maintained in destinations.
+
+R4: The source and destination may be on different machines with appropriate network mount.
+
+R5: For better performance, file that has been backed up previously shall not be copied again, unless the source
+       file has been modified since last backup.
+
+R6: Folders such as source and destinations are specified in a configuration file.
+
+
+3. Design Consideration
+
+3.1 Configuration
+
+R2 can be ignored when implementing this program. Suppose the main program is fb.py, then user can run it from
+command line as
+
+> fb.py
+
+Upon execution, fb.py will look for teh configuration file fb.conf. This configuration file contains following information:
+
+fb.sourceFolder=[your source folder to be backed up]
+fb.destinationFolders = [firstDestination, secondDestination, thirdDestination, ...]
+
+3.2 Track Backup
+
+R5 requires to track every file that has been successfully backed up.
+
+Use one tracking file, fb.track.[N], to track files that have been copied to destination [N]. To be simple, we can
+just track file's modification time. For example, the following 2 lines indicate that 2 files have been successfully
+copied to the destination, <sourceFolder>/Readme.txt was last modified on 2014-12-23T09:10:21, and
+photos/school/DVHS-001.jpg on 2014-12-23T09:10:22
+
+
+Readme.txt = 20141223T091021
+photos/school/DVHS-001.jpg = 20141223T091022
+
+3.3 Key implementations
+
+3.3.1 Read configuration file
+
+The configuration file fb.conf is edited manually. FB, upon starts, will read and parse this file to initialize a few
+variables:
+
+sourceFolder, and
+destinationFolders.
+
+Note destinationFolders is an array of destination folders.
+
+# open the config file
+configFile = open('fb.conf', 'r')
+
+# loop through the file
+for line in configFile:
+    print line
+
+    # split the line by "="
+    pair = line.split("=")
+
+    if(pair[0] == "fb.sourceFolder") then
+        sourceFolder = pair[1]
+    else if(pair[0] == "fb.destinationFolders") then
+        # add to destinationFolders
+        destinationFolders = pair[1].split(",")
+
+# close the file
+configFile.close()
+
+3.3.2 File Scan
+
+Scan the sourceFolder content by finding each file,
+
+for dest in destinationFolders :
+    print "Backing from ", sourceFolder, " to ", dest, "..."
+    backupFilder( sourceFolder, dest)
+
+Implementing backupFilder()
+
+import os
+import shutil
+
+def  backupFolder(sourceDir, destDir):
+  # Walk the tree.
+    for root, directories, files in os.walk(sourceDir):
+        for filename in files:
+            # Join the two strings in order to form the full filepath.
+            filepath = os.path.join(root, filename)
+
+           # check if this file was copied before
+           if(notBackedUpYet(filepath)) :
+              # copy this file and record it
+              shutil.copy2(filepath, getDestFilePath(filepath, sourceDir, destDir))
+
+              updateLastCopyTime(filepath)
+
+import os
+import datetime
+
+# check against tracker to see if this file has been copied already
+def notBackedUpYet(filepath): 
+    # find the last modification time of the file in "2009-10-06 10:50:01"
+    file = open(filepath);
+    t = os.path.getmtime(filename)
+    file.close()
+    modTime = datetime.datetime.fromtimestamp(t)
+
+    # find when this file was last copied
+    lastCopyTime = getLastCopyTime(filepath);
+
+    return modTime != lastCopyTime
+
+More mfunctions to be defined:
+
+# replace the sourceDir part from filepath with destDir
+def getDestFilePath(filepath, sourceDir, destDir):
+
+# get the last copy time for the file
+def getLastCopyTime(filepath):
+
+# update the last copy time for the file
+def updateLastCopyTime(filepath, modTime):
